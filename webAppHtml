@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<base target="_top">
+
+<style>
+body {
+  font-family: Segoe UI, Arial;
+  background: #f3f4f6;
+  padding: 30px;
+}
+.container {
+  max-width: 750px;
+  margin: auto;
+  background: white;
+  padding: 25px;
+  border-radius: 12px;
+}
+button {
+  padding: 10px 15px;
+  border-radius: 8px;
+  border: none;
+  background: #2563eb;
+  color: white;
+  cursor: pointer;
+  margin-top: 10px;
+}
+#quadro {
+  display: none;
+  border: 1px solid #d1d5db;
+  padding: 15px;
+  border-radius: 8px;
+}
+.linha {
+  display: flex;
+  gap: 15px;
+  flex-wrap: wrap;
+}
+.editavel {
+  background: #fef9c3;
+  padding: 3px 6px;
+  border-radius: 4px;
+  min-width: 120px;
+}
+select {
+  padding: 4px;
+  border-radius: 6px;
+}
+#topo {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  font-weight: bold;
+}
+#btnTema {
+  position: fixed;
+  top: 15px;
+  right: 20px;
+  padding: 8px 10px;
+  border-radius: 999px;
+  background: #e5e7eb;
+  color: #111827;
+  font-size: 16px;
+  cursor: pointer;
+  border: none;
+}
+
+/* ===== MODO ESCURO ===== */
+body.dark {
+  background: #111827;
+  color: #e5e7eb;
+}
+
+body.dark .container {
+  background: #1f2933;
+}
+
+body.dark .editavel {
+  background: #374151;
+  color: #f9fafb;
+}
+
+body.dark select {
+  background: #374151;
+  color: #f9fafb;
+}
+
+body.dark #quadro {
+  border-color: #4b5563;
+}
+
+body.dark button {
+  background: #2563eb;
+  color: white;
+}
+
+.rodape {
+  margin-top: 170px;
+  text-align: center;
+  font-size: 13px;
+  color: #6b7280;
+}
+
+
+</style>
+</head>
+
+<body>
+<div class="container">
+
+<button onclick="abrir()">➕ Inserir</button>
+
+<div id="quadro">
+
+<div id="topo">
+  <div>Código: <span id="codigo">---</span></div>
+  <div>Linha atual: <span id="linhaAtual">---</span></div>
+</div>
+
+<div class="linha">
+🆔 <b>Matrícula:</b>
+<span id="matricula" class="editavel" contenteditable></span>
+</div>
+
+<div class="linha">
+🚌 Olá, <b><span id="nome",obrigado pelo envio da solicitação de reparo.>---</span></b>
+</div>
+
+<div class="linha">
+📄 <b>Código SR:</b>
+<span id="codigoSR" class="editavel" contenteditable></span>
+</div>
+
+<div class="linha">
+📅 <b>Data:</b>
+<span id="data"></span>
+</div>
+
+<div class="linha">
+⚙️ <b>Veículo:</b>
+<span id="veiculo" class="editavel" contenteditable></span>
+
+🚏 <b>Garagem:</b>
+<select id="garagem"></select>
+</div>
+
+<div class="linha">
+⚠️ <b>Tipo de problema:</b>
+<select id="tipoProblema"></select>
+</div>
+
+<div class="linha">
+📝 <b>Descrição:</b>
+<span id="descricao" class="editavel" contenteditable></span>
+</div>
+
+</div>
+
+<button onclick="enviar()">📤 Enviar</button>
+<button onclick="copiar()">📋 Copiar</button>
+
+</div>
+
+<button id="btnTema" onclick="alternarTema()">🌙</button>
+
+<footer class="rodape">
+  Sistema interno desenvolvido por <b> - M@rco Tulio - </b>
+</footer>
+
+<script>
+let linhaAtiva = null;
+
+/* =========================
+   INSERIR
+========================= */
+function abrir() {
+  if (linhaAtiva) return;
+
+  quadro.style.display = "block";
+  data.innerText = new Date().toLocaleDateString("pt-BR");
+
+  google.script.run.withSuccessHandler(r => {
+    linhaAtiva = r.linha;
+    codigo.innerText = r.codigo;
+    linhaAtual.innerText = r.linha;
+  }).criarLinhaInicial(data.innerText);
+
+  google.script.run.withSuccessHandler(preencherSelects)
+    .obterListas();
+}
+
+/* =========================
+   SELECTS
+========================= */
+function preencherSelects(d) {
+  preencher("garagem", d.garagens);
+  preencher("tipoProblema", d.tipos);
+}
+function preencher(id, lista) {
+  const s = document.getElementById(id);
+  s.innerHTML = "<option value=''>Selecione</option>";
+  lista.forEach(v => {
+    const o = document.createElement("option");
+    o.textContent = v;
+    s.appendChild(o);
+  });
+}
+
+/* =========================
+   MATRÍCULA → NOME
+========================= */
+matricula.addEventListener("blur", e => {
+  google.script.run.withSuccessHandler(n =>
+    nome.innerText = n || "---"
+  ).obterNomePorMatricula(e.target.innerText.trim());
+});
+
+/* =========================
+   VEÍCULO → GARAGEM
+========================= */
+veiculo.addEventListener("blur", e => {
+  google.script.run.withSuccessHandler(g => {
+    if (g) garagem.value = g;
+  }).obterGaragemPorVeiculo(e.target.innerText.trim());
+});
+
+/* =========================
+   ENVIAR
+========================= */
+function enviar() {
+  if (!linhaAtiva) {
+    alert("Nenhuma linha ativa.");
+    return;
+  }
+
+  const d = {
+    matricula: matricula.innerText.trim(),
+    codigoSR: codigoSR.innerText.trim(),
+    veiculo: veiculo.innerText.trim(),
+    garagem: garagem.value,
+    tipoProblema: tipoProblema.value,
+    descricao: descricao.innerText.trim(),
+    data: data.innerText.trim()
+  };
+
+ 
+
+    // 🔹 LIMPA CAMPOS VISUAIS
+    google.script.run.withSuccessHandler(() => {
+
+  // limpa apenas campos que mudam
+  ["descricao", "codigoSR"].forEach(id =>
+    document.getElementById(id).innerText = ""
+  );
+
+  // 🔹 AVANÇA 1 LINHA (MESMA LÓGICA DO SHEETS)
+  linhaAtiva++;
+  linhaAtual.innerText = linhaAtiva;
+
+  const novoCodigo = linhaAtiva - 2;
+  codigo.innerText = novoCodigo;
+
+  data.innerText = new Date().toLocaleDateString("pt-BR");
+
+}).finalizarSolicitacao(linhaAtiva, d);
+}
+
+/* =========================
+   COPIAR
+========================= */
+function copiar() {
+  const r = document.createRange();
+  r.selectNodeContents(quadro);
+  const s = window.getSelection();
+  s.removeAllRanges();
+  s.addRange(r);
+  document.execCommand("copy");
+  s.removeAllRanges();
+
+    const texto = `
+
+🆔MATRÍCULA: ${matricula.innerText}
+🚌NOME: Olá, ${nome.innerText} , obrigado pelo envio da solicitação de reparo.
+📌CÓDIGO SR: ${codigoSR.innerText}
+📅DATA: ${data.innerText}
+
+⚙️VEÍCULO: ${veiculo.innerText} 
+🚏GARAGEM: ${garagem.value}
+TIPO : ${tipoProblema.value}
+
+⚠️DESCRIÇÃO:
+${descricao.innerText}
+`.trim();
+
+  navigator.clipboard.writeText(texto)
+    
+}
+
+/* =========================
+   LIMPAR
+========================= */
+function limpar() {
+  quadro.style.display = "none";
+  linhaAtiva = null;
+  ["matricula","veiculo","descricao","codigoSR"].forEach(id =>
+    document.getElementById(id).innerText = ""
+  );
+  nome.innerText = "---";
+}
+
+/* =========================
+   BOTAO DARK 
+========================= */
+function alternarTema() {
+  document.body.classList.toggle("dark");
+  btnTema.innerText = document.body.classList.contains("dark") ? "☀️" : "🌙";
+}
+
+</script>
+</body>
+</html>
