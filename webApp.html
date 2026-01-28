@@ -123,8 +123,15 @@ body.dark button {
 <span id="matricula" class="editavel" contenteditable></span>
 </div>
 
+<div id="ErroNome">
+  <div>Nome: <span id="nome">---</span></div>
+</div>
+
+
+
+
 <div class="linha">
-🚌 Olá, <b><span id="nome",obrigado pelo envio da solicitação de reparo.>---</span></b>
+🚌 Olá, <span id="nomeMensagem">---</span>,obrigado pelo envio da solicitação de reparo.
 </div>
 
 <div class="linha">
@@ -171,6 +178,25 @@ body.dark button {
 <script>
 let linhaAtiva = null;
 
+
+const matricula = document.getElementById("matricula");
+const nome = document.getElementById("nome");
+const veiculo = document.getElementById("veiculo");
+const codigoSR = document.getElementById("codigoSR");
+const descricao = document.getElementById("descricao");
+const garagem = document.getElementById("garagem");
+const tipoProblema = document.getElementById("tipoProblema");
+const quadro = document.getElementById("quadro");
+const data = document.getElementById("data");
+const nomeMensagem = document.getElementById("nomeMensagem");
+const codigo = document.getElementById("codigo");
+const linhaAtual = document.getElementById("linhaAtual");
+
+window.onerror = function(msg, url, line) {
+  alert("Erro no sistema. Recarregue a página.\n\n" + msg);
+};
+
+
 /* =========================
    INSERIR
 ========================= */
@@ -210,10 +236,44 @@ function preencher(id, lista) {
 /* =========================
    MATRÍCULA → NOME
 ========================= */
-matricula.addEventListener("blur", e => {
-  google.script.run.withSuccessHandler(n =>
-    nome.innerText = n || "---"
-  ).obterNomePorMatricula(e.target.innerText.trim());
+
+matricula.addEventListener("blur", () => {
+  const campoNome = document.getElementById("nome");
+  const campoNomeMsg = document.getElementById("nomeMensagem");
+
+  google.script.run.withSuccessHandler(nomeRetornado => {
+
+    // ✅ MATRÍCULA ENCONTRADA
+    if (nomeRetornado) {
+      campoNome.innerText = nomeRetornado;
+      campoNomeMsg.innerText = nomeRetornado;
+
+      campoNome.contentEditable = "false";
+      campoNome.style.background = "";
+      campoNome.style.color = "";
+      campoNome.onfocus = null;
+    }
+
+    // ❌ MATRÍCULA NÃO ENCONTRADA
+    else {
+      campoNome.innerText = "Digite o nome válido para a matrícula";
+      campoNomeMsg.innerText = "___";
+
+      campoNome.contentEditable = "true";
+      campoNome.style.background = "#e0f2fe";
+      campoNome.style.color = "#64748b";
+      campoNome.focus();
+
+      // remove mensagem ao digitar
+      campoNome.onfocus = () => {
+        if (campoNome.innerText === "Digite o nome válido para a matrícula") {
+          campoNome.innerText = "";
+          campoNome.style.color = "#0f172a";
+        }
+      };
+    }
+
+  }).obterNomePorMatricula(matricula.innerText.trim());
 });
 
 /* =========================
@@ -241,7 +301,8 @@ function enviar() {
     garagem: garagem.value,
     tipoProblema: tipoProblema.value,
     descricao: descricao.innerText.trim(),
-    data: data.innerText.trim()
+    data: data.innerText.trim(),
+    nome: nome.innerText.trim() // 🔹 NOVO, envia nome se a matricula nao for encontrada
   };
 
  
