@@ -378,35 +378,7 @@ function alternarTema() {
   btnTema.innerText = document.body.classList.contains("dark") ? "☀️" : "🌙";
 }
 
-  function verificarVercel() {
-      const senhaCorreta = "suasenha123"; // Defina sua senha aqui
-      const senhaDigitada = document.getElementById("campoSenha").value;
 
-      if (senhaDigitada === senhaCorreta) {
-        document.getElementById("bloqueio").style.display = "none";
-        document.getElementById("conteudo-site").style.display = "block";
-      } else {
-        alert("Senha incorreta!");
-      }
-    }
-  // Antes (causa o erro se o Google não carregou ainda)
-// const mapa = new google.maps.Map(...); 
-
-// Depois (Protegido)
-function inicializarMeuRecurso() {
-    if (typeof google !== 'undefined') {
-        const mapa = new google.maps.Map(document.getElementById("map"), {
-            center: { lat: -34.397, lng: 150.644 },
-            zoom: 8,
-        });
-    } else {
-        console.warn("Aguardando a API do Google carregar...");
-        // Tenta rodar de novo em 1 segundo
-        setTimeout(inicializarMeuRecurso, 1000); 
-    }
-}
-
-inicializarMeuRecurso();
 
 </script>
 </body>
